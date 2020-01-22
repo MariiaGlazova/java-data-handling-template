@@ -1,5 +1,10 @@
 package com.epam.izh.rd.online.service;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+
 public class SimpleRegExpService implements RegExpService {
 
     /**
@@ -11,7 +16,13 @@ public class SimpleRegExpService implements RegExpService {
      */
     @Override
     public String maskSensitiveData() {
-        return null;
+        String string = "";
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(new File("src\\main\\resources\\sensitive_data.txt")))) {
+            string = bufferedReader.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return string.replaceAll("(\\s\\d{4})(\\s\\d{4}\\s\\d{4}\\s)(\\d{4}\\s)", "$1 **** **** $3");
     }
 
     /**
@@ -22,6 +33,12 @@ public class SimpleRegExpService implements RegExpService {
      */
     @Override
     public String replacePlaceholders(double paymentAmount, double balance) {
-        return null;
+        String string = "";
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader("src/main/resources/sensitive_data.txt"))) {
+            string = bufferedReader.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return string.replace("${payment_amount}", String.valueOf((int) paymentAmount)).replace("${balance}", String.valueOf((int) balance));
     }
 }
