@@ -1,5 +1,14 @@
 package com.epam.izh.rd.online.repository;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Objects;
+
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+
 public class SimpleFileRepository implements FileRepository {
 
     /**
@@ -9,8 +18,18 @@ public class SimpleFileRepository implements FileRepository {
      * @return файлов, в том числе скрытых
      */
     @Override
+
     public long countFilesInDirectory(String path) {
-        return 0;
+        long countFiles = 0;
+        File directory = new File(Objects.requireNonNull(ClassLoader.getSystemClassLoader().getResource(path)).getFile());
+        if (directory.isDirectory()) {
+            for (File file : Objects.requireNonNull(directory.listFiles())) {
+                countFiles += countFilesInDirectory(path + "/" + file.getName());
+            }
+        } else {
+            countFiles++;
+        }
+        return countFiles;
     }
 
     /**
@@ -21,7 +40,15 @@ public class SimpleFileRepository implements FileRepository {
      */
     @Override
     public long countDirsInDirectory(String path) {
-        return 0;
+        long countFiles = 0;
+        File directory = new File(Objects.requireNonNull(ClassLoader.getSystemClassLoader().getResource(path)).getFile());
+        if (directory.isDirectory()) {
+            countFiles++;
+            for (File file : Objects.requireNonNull(directory.listFiles())) {
+                countFiles += countDirsInDirectory(path + "/" + file.getName());
+            }
+        }
+        return countFiles;
     }
 
     /**
@@ -32,7 +59,16 @@ public class SimpleFileRepository implements FileRepository {
      */
     @Override
     public void copyTXTFiles(String from, String to) {
-        return;
+        File[] files = new File(from).listFiles();
+        if (files != null) {
+            for (File file : files) {
+                try {
+                    Files.copy(file.toPath(), Paths.get(to).resolve(file.getName()), REPLACE_EXISTING);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     /**
@@ -44,8 +80,15 @@ public class SimpleFileRepository implements FileRepository {
      */
     @Override
     public boolean createFile(String path, String name) {
-        return false;
+        File directory = new File(Objects.requireNonNull(ClassLoader.getSystemClassLoader().getResource(path)).getFile());
+        try {
+            return new File(directory, name).createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return new File(directory, name).exists();
     }
+
 
     /**
      * Метод считывает тело файла .txt из папки src/main/resources
@@ -55,6 +98,13 @@ public class SimpleFileRepository implements FileRepository {
      */
     @Override
     public String readFileFromResources(String fileName) {
-        return null;
+        StringBuilder stringBuilder = new StringBuilder();
+        try {
+            Files.readAllLines(Paths.get(Objects.requireNonNull(ClassLoader.getSystemClassLoader()
+                    .getResource(fileName)).toURI())).forEach(stringBuilder::append);
+            return stringBuilder.toString();
+        } catch (IOException | URISyntaxException e) {
+            return null;
+        }
     }
 }
